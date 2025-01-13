@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <h1>Payroll Calculator</h1>
+    <form id="payrollForm">
+        <label for="name">ФИО:</label><br>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="costCenter">Cost Center:</label><br>
+        <select id="costCenter" name="costCenter" required>
+            <option value="MD TOP">MD TOP</option>
+            <option value="COMMON COSTS">COMMON COSTS</option>
+            <option value="JV02 COMMON COSTS">JV02 COMMON COSTS</option>
+            <option value="JV03 COMMON COSTS">JV03 COMMON COSTS</option>
+            <option value="JV02 MD TOP">JV02 MD TOP</option>
+            <option value="JV03 MD TOP">JV03 MD TOP</option>
+            <option value="F&C LOCAL">F&C LOCAL</option>
+            <option value="RP LOC">RP LOC</option>
+        </select><br><br>
+
+        <label for="taxableIncome">Total Taxable Income:</label><br>
+        <input type="number" id="taxableIncome" name="taxableIncome" required><br><br>
+
+        <button type="button" onclick="addEmployee()">Добавить сотрудника</button>
+    </form>
+
+    <h2>Сотрудники:</h2>
+    <table id="employeeTable" border="1">
+        <thead>
+            <tr>
+                <th>ФИО</th>
+                <th>Cost Center</th>
+                <th>Total Taxable Income</th>
+                <th>Pension Contribution</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <br>
+    <button onclick="exportToExcel()">Сохранить в Excel</button>
+
+    <script>
+        // Список сотрудников
+        const employees = [];
+
+        function addEmployee() {
+            // Получение значений из формы
+            const name = document.getElementById("name").value;
+            const costCenter = document.getElementById("costCenter").value;
+            const taxableIncome = parseFloat(document.getElementById("taxableIncome").value);
+
+            if (!name || !costCenter || isNaN(taxableIncome)) {
+                alert("Заполните все поля!");
+                return;
+            }
+
+            // Расчёт пенсионных отчислений
+            const maxBase = 50 * 85000;
+            const pensionContribution = Math.round(
+                (taxableIncome < maxBase ? taxableIncome * 0.1 : maxBase * 0.1) * 100
+            ) / 100;
+
+            // Добавление сотрудника в список
+            const employee = {
+                name,
+                costCenter,
+                taxableIncome,
+                pensionContribution
+            };
+            employees.push(employee);
+
+            // Добавление строки в таблицу
+            const tableBody = document.getElementById("employeeTable").querySelector("tbody");
+            const row = tableBody.insertRow();
+            row.insertCell(0).textContent = name;
+            row.insertCell(1).textContent = costCenter;
+            row.insertCell(2).textContent = taxableIncome.toFixed(2);
+            row.insertCell(3).textContent = pensionContribution.toFixed(2);
+
+            // Очистка формы
+            document.getElementById("payrollForm").reset();
+        }
+
+        function exportToExcel() {
+            if (employees.length === 0) {
+                alert("Нет данных для сохранения!");
+                return;
+            }
+
+            // Создание книги Excel
+            const worksheet = XLSX.utils.json_to_sheet(employees);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+
+            // Экспорт файла
+            XLSX.writeFile(workbook, "payroll_results.xlsx");
+        }
+    </script>
+</body>
+</html>
